@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🎧 Music Mood Mixer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: Arial, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 { color: #667eea; margin-bottom: 10px; }
+        .search-box { 
+            margin: 30px 0;
+            display: flex;
+            gap: 10px;
+        }
+        input { 
+            flex: 1;
+            padding: 15px; 
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+        }
+        button { 
+            padding: 15px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        button:hover { background: #764ba2; }
+        .genre { 
+            background: #f0f0f0;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-size: 20px;
+            text-align: center;
+        }
+        .music-card { 
+            background: #f9f9f9;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+        }
+        .music-title { 
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 18px;
+        }
+        .video-player {
+            width: 100%;
+            height: 80px;
+            border-radius: 10px;
+            border: none;
+        }
+        .play-btn {
+            background: #1DB954;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .play-btn:hover {
+            background: #1ed760;
+        }
+        .now-playing {
+            background: #e8f5e9;
+            border: 2px solid #1DB954;
+        }
+        .loading { 
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎧 Music Mood Mixer</h1>
+        <p>Tell me how you're feeling, and I'll find the perfect music!</p>
+        
+        <div class="search-box">
+            <input type="text" id="mood" placeholder="happy, sad, energetic, chill...">
+            <button onclick="search()">🎵 Find Music</button>
+        </div>
+        
+        <div class="loading" id="loading">🎵 Finding perfect music...</div>
+        <div class="error" id="error"></div>
+        
+        <div id="genre"></div>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        let currentPlayer = null;
+        let currentCard = null;
+
+        function playVideo(videoId, cardElement) {
+            // Stop and remove ALL previous players
+            const allPlayers = document.querySelectorAll('.video-player');
+            allPlayers.forEach(player => {
+                player.remove();
+            });
+            
+            // Remove highlight from all cards
+            const allCards = document.querySelectorAll('.music-card');
+            allCards.forEach(card => {
+                card.classList.remove('now-playing');
+            });
+            
+            // Set new player
+            currentPlayer = videoId;
+            currentCard = cardElement;
+            cardElement.classList.add('now-playing');
+            
+            // Create and load player (only one at a time)
+            const playerDiv = document.getElementById('player-container-' + videoId);
+            playerDiv.innerHTML = `
+                <iframe id="player-${videoId}" class="video-player"
+                    src="https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&modestbranding=1&rel=0&fs=0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    sandbox="allow-scripts allow-same-origin allow-presentation">
+                </iframe>
+            `;
+        }
+
+        async function search() {
+            const mood = document.getElementById('mood').value;
+            if (!mood) return;
+            
+            // Reset current player
+            currentPlayer = null;
+            currentCard = null;
+            
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('genre').innerHTML = '';
+            document.getElementById('results').innerHTML = '';
+            
+            try {
+                const response = await fetch('/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mood })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    document.getElementById('error').textContent = data.error;
+                    document.getElementById('error').style.display = 'block';
+                } else {
+                    document.getElementById('genre').innerHTML = 
+                        `<strong>Perfect for you:</strong> ${data.genre}`;
+                    
+                    let html = '';
+                    data.videos.forEach((video, index) => {
+                        html += `
+                            <div class="music-card" id="card-${video.id}">
+                                <div class="music-title">🎵 ${video.title}</div>
+                                <div id="player-container-${video.id}"></div>
+                                <button class="play-btn" onclick="playVideo('${video.id}', document.getElementById('card-${video.id}'))">
+                                    ▶ Play Song
+                                </button>
+                            </div>
+                        `;
+                    });
+                    document.getElementById('results').innerHTML = html;
+                }
+            } catch (error) {
+                document.getElementById('error').textContent = 'Error: ' + error.message;
+                document.getElementById('error').style.display = 'block';
+            }
+            
+            document.getElementById('loading').style.display = 'none';
+        }
+        
+        document.getElementById('mood').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') search();
+        });
+    </script>
+</body>
+</html>
+
