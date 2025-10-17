@@ -13,12 +13,12 @@ AI-powered web application that finds the perfect songs based on your mood or em
 
 ## 🛠️ Tech Stack
 
-- **Backend**: Flask, Python 3.12
+- **Framework**: Streamlit, Python 3.12
 - **AI**: AWS Bedrock (Claude 3 Haiku)
 - **Music**: YouTube Data API v3
-- **Frontend**: HTML, CSS, JavaScript
+- **Frontend**: HTML, CSS, JavaScript (via Streamlit components)
 - **Deployment**: Docker, AWS App Runner
-- **Secrets**: AWS Secrets Manager
+- **Secrets**: AWS Secrets Manager / Streamlit Secrets
 
 ## 📋 Prerequisites
 
@@ -132,17 +132,20 @@ aws iam put-role-policy \
 
 ```
 .
-├── app.py                          # Flask application
+├── app.py                          # Streamlit application
 ├── ai_helper.py                    # AWS Bedrock & YouTube integration
 ├── secrets_helper.py               # AWS Secrets Manager helper
 ├── templates/
-│   └── index.html                  # Frontend UI
+│   └── index.html                  # Frontend UI template
+├── .streamlit/
+│   └── secrets.toml.example        # Example secrets configuration
 ├── requirements.txt                # Python dependencies
 ├── Dockerfile                      # Multi-stage Alpine build
-├── bedrock-policy.json            # IAM policy for Bedrock
-├── secrets-manager-policy.json    # IAM policy for Secrets Manager
-├── .gitignore                     # Git ignore rules
-└── README.md                      # This file
+├── bedrock-policy.json             # IAM policy for Bedrock access
+├── secrets-manager-policy.json     # IAM policy for Secrets Manager
+├── .dockerignore                   # Docker ignore rules
+├── .gitignore                      # Git ignore rules
+└── README.md                       # This file
 ```
 
 ## 🎮 How to Use
